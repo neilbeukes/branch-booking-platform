@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Branch {
+  id          Int           @id @default(autoincrement())
+  name        String
+  address     String
+  branchCode  String        @unique @map("branch_code")
+  openTime    String        @map("open_time")   // e.g. "09:00"
+  closeTime   String        @map("close_time") // e.g. "17:00"
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  appointments Appointment[]
+}
+
+model Appointment {
+  id                   Int      @id @default(autoincrement())
+  branchId             Int      @map("branch_id")
+  appointmentDate      DateTime @map("appointment_date") @db.Date
+  startTime            String   @map("start_time")  // e.g. "10:00"
+  endTime              String   @map("end_time")
+  customerName         String   @map("customer_name")
+  customerPhone        String   @map("customer_phone")
+  customerEmail        String   @map("customer_email")
+  confirmationReference String  @unique @map("confirmation_reference")
+  status               String   @default("scheduled")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  branch               Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@unique([branchId, appointmentDate, startTime])
+  @@map("appointments")
+}
