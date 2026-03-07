@@ -36,7 +36,6 @@ export function DetailsStep({
   editEmail,
   defaultValues,
 }: DetailsStepProps) {
-  console.log("🚀 ~ DetailsStep ~ date:", date);
   const createMutation = useMutation({
     mutationFn: appointments.create,
     onSuccess: (data) => onSubmit(data),

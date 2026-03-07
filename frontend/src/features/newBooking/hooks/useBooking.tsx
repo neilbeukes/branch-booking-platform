@@ -9,16 +9,36 @@ export interface InitialEditState {
   branch: Branch;
 }
 
+function dateAndSlotFromBooking(
+  booking: BookingListItem,
+): { date: string; slot: Slot } | null {
+  if (!booking.bookingTime || booking.durationMinutes == null) return null;
+  const start = new Date(booking.bookingTime);
+  const end = new Date(start.getTime() + booking.durationMinutes * 60 * 1000);
+  const date = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
+  const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
+  const endTime = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
+  return { date, slot: { startTime, endTime } };
+}
+
 const useBooking = (initialEdit: InitialEditState | null = null) => {
-  const [stepIndex, setStepIndex] = useState<number>(() => (initialEdit ? 2 : 0));
-  const [branch, setBranch] = useState<Branch | null>(() => initialEdit?.branch ?? null);
-  const [date, setDate] = useState(() => initialEdit?.booking.date ?? '');
-  const [slot, setSlot] = useState<Slot | null>(() =>
-    initialEdit?.booking.time
-      ? { startTime: initialEdit.booking.time, endTime: initialEdit.booking.endTime ?? '' }
-      : null
+  const editDateAndSlot = initialEdit
+    ? dateAndSlotFromBooking(initialEdit.booking)
+    : null;
+  const initialDate = editDateAndSlot?.date ?? "";
+  const initialSlot = editDateAndSlot?.slot ?? null;
+
+  const [stepIndex, setStepIndex] = useState<number>(() =>
+    initialEdit ? 2 : 0,
   );
-  const [confirmation, setConfirmation] = useState<ConfirmationPayload | null>(null);
+  const [branch, setBranch] = useState<Branch | null>(
+    () => initialEdit?.branch ?? null,
+  );
+  const [date, setDate] = useState(() => initialDate);
+  const [slot, setSlot] = useState<Slot | null>(() => initialSlot);
+  const [confirmation, setConfirmation] = useState<ConfirmationPayload | null>(
+    null,
+  );
 
   const editReference = initialEdit?.booking.confirmationReference ?? null;
   const editEmail = initialEdit?.booking.customerEmail ?? null;
@@ -26,24 +46,24 @@ const useBooking = (initialEdit: InitialEditState | null = null) => {
     initialEdit?.booking.customerName != null
       ? {
           customerName: initialEdit.booking.customerName,
-          customerPhone: initialEdit.booking.customerPhone ?? '',
-          customerEmail: initialEdit.booking.customerEmail ?? '',
+          customerPhone: initialEdit.booking.customerPhone ?? "",
+          customerEmail: initialEdit.booking.customerEmail ?? "",
         }
       : undefined;
 
   const currentStep = STEPS[stepIndex];
-    const isFirstStep = stepIndex === 0;
-    const isLastStep = stepIndex === STEPS.length - 1;
+  const isFirstStep = stepIndex === 0;
+  const isLastStep = stepIndex === STEPS.length - 1;
 
-    const goNext = () => {
-        if (isLastStep) return;
-        setStepIndex(stepIndex + 1);
-    };
+  const goNext = () => {
+    if (isLastStep) return;
+    setStepIndex(stepIndex + 1);
+  };
 
-    const goBack = () => {
-        if (isFirstStep) return;
-        setStepIndex(stepIndex - 1);
-    };
+  const goBack = () => {
+    if (isFirstStep) return;
+    setStepIndex(stepIndex - 1);
+  };
 
   const handleBranchSelect = (b: Branch) => {
     setBranch(b);
@@ -58,14 +78,14 @@ const useBooking = (initialEdit: InitialEditState | null = null) => {
 
   const handleDetailsSubmit = (data: ConfirmationPayload) => {
     setConfirmation(data);
-    toast.success(editReference ? 'Booking updated' : 'Booking confirmed');
+    toast.success(editReference ? "Booking updated" : "Booking confirmed");
     goNext();
   };
 
   const handleReset = () => {
     setStepIndex(0);
     setBranch(null);
-    setDate('');
+    setDate("");
     setSlot(null);
     setConfirmation(null);
   };

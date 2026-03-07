@@ -4,8 +4,8 @@ A simple appointment booking system: customers choose a branch, date and time, e
 
 ## Some assumptions:
 
-- User is always anonymous (Now authentication layer for now)
-- `/bookings` page shows all bookings make . This would be user only booking if we add Auth layer
+- User is always anonymous (Now authentication layer for now). Booking management is protected by reference number and Surname. Common for booking platfroms.
+- `/bookings` page shows all bookings make . (This is just for veryfying booking for this demonstration)
 - No SMS/Email is sent. But reference number is generated and saved, can add to calendar.
 - Various libraries are added to make develoment faster and more reliable. Some include Framermotion, datefns, prisma, tanstack, react-icons etc.
 
@@ -86,3 +86,4 @@ Or use the Docker build: the image builds the frontend and serves it from Expres
 ├── Dockerfile        Builds frontend + runs backend
 └── README.md
 ```
+

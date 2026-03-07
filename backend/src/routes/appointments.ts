@@ -1,24 +1,34 @@
 import { Router, Request, Response, NextFunction } from 'express';
+import { addMinutes } from 'date-fns';
 import { prisma } from '../lib/prisma.js';
-import { formatDateToYMD, addMinutesToTime, parseDateString } from '../utils/date.js';
-import { SLOT_MINUTES } from '../utils/consts.js';
+import { localDateAndTimeToUTC } from '../utils/date.js';
+import { SLOT_MINUTES, BOOKING_TIMEZONE } from '../utils/consts.js';
 
 export const appointmentsRouter = Router();
 
 const branchSelect = { name: true, address: true, branchCode: true } as const;
 
-function toAppointmentDto(
-  a: { appointmentDate: Date; startTime: string; endTime: string; confirmationReference: string; customerName: string; customerPhone: string; customerEmail: string; status: string; branchId: number; branch: { name: string; address: string; branchCode: string } }
-) {
+type AppointmentRow = {
+  bookingTime: Date;
+  durationMinutes: number;
+  confirmationReference: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail: string;
+  status: string;
+  branchId: number;
+  branch: { name: string; address: string; branchCode: string };
+};
+
+function toAppointmentDto(a: AppointmentRow) {
   return {
     confirmationReference: a.confirmationReference,
     branchId: a.branchId,
     branch: a.branch.name,
     branchAddress: a.branch.address,
     branchCode: a.branch.branchCode,
-    date: formatDateToYMD(new Date(a.appointmentDate)),
-    time: a.startTime,
-    endTime: a.endTime,
+    bookingTime: a.bookingTime.toISOString(),
+    durationMinutes: a.durationMinutes,
     customerName: a.customerName,
     customerPhone: a.customerPhone,
     customerEmail: a.customerEmail,
@@ -26,11 +36,22 @@ function toAppointmentDto(
   };
 }
 
+function windowsOverlap(
+  startA: Date,
+  durationMinutesA: number,
+  startB: Date,
+  durationMinutesB: number
+): boolean {
+  const endA = addMinutes(startA, durationMinutesA);
+  const endB = addMinutes(startB, durationMinutesB);
+  return startA < endB && startB < endA;
+}
+
 /** GET /api/appointments — list all appointments */
 appointmentsRouter.get('/', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const appointments = await prisma.appointment.findMany({
-      orderBy: [{ appointmentDate: 'asc' }, { startTime: 'asc' }],
+      orderBy: { bookingTime: 'asc' },
       include: { branch: { select: branchSelect } },
     });
     res.json(appointments.map(toAppointmentDto));
@@ -57,19 +78,26 @@ appointmentsRouter.post('/', async (req: Request, res: Response, next: NextFunct
     const branch = await prisma.branch.findUnique({ where: { id: Number(branchId) } });
     if (!branch) return res.status(404).json({ error: 'Branch not found' });
 
-    const appointmentDate = parseDateString(date as string);
-    console.log("🚀 ~ date:", date)
-    console.log("🚀 ~ appointmentDate:", appointmentDate)
-    const startTimeStr = startTime as string;
-    const endTime = addMinutesToTime(startTimeStr, SLOT_MINUTES);
+    const bookingTime = localDateAndTimeToUTC(date as string, startTime as string, BOOKING_TIMEZONE);
     const confirmationReference = genReference();
+
+    // Prevent double-booking: no overlapping windows for same branch.
+    const scheduled = await prisma.appointment.findMany({
+      where: { branchId: branch.id, status: 'scheduled' },
+      select: { bookingTime: true, durationMinutes: true },
+    });
+    const hasOverlap = scheduled.some((a) =>
+      windowsOverlap(bookingTime, SLOT_MINUTES, a.bookingTime, a.durationMinutes)
+    );
+    if (hasOverlap) {
+      return res.status(409).json({ error: 'Slot no longer available' });
+    }
 
     const appointment = await prisma.appointment.create({
       data: {
         branchId: branch.id,
-        appointmentDate,
-        startTime: startTimeStr,
-        endTime,
+        bookingTime,
+        durationMinutes: SLOT_MINUTES,
         customerName: customerName as string,
         customerPhone: customerPhone as string,
         customerEmail: customerEmail as string,
@@ -78,16 +106,7 @@ appointmentsRouter.post('/', async (req: Request, res: Response, next: NextFunct
       include: { branch: { select: branchSelect } },
     });
 
-    res.status(201).json({
-      confirmationReference: appointment.confirmationReference,
-      branch: appointment.branch.name,
-      branchAddress: appointment.branch.address,
-      branchCode: appointment.branch.branchCode,
-      date: formatDateToYMD(new Date(appointment.appointmentDate)),
-      time: appointment.startTime,
-      customerName: appointment.customerName,
-      customerEmail: appointment.customerEmail,
-    });
+    res.status(201).json(toAppointmentDto(appointment));
   } catch (e) {
     if (isPrismaConflictError(e) && e.code === 'P2002') {
       return res.status(409).json({ error: 'Slot no longer available' });
@@ -142,7 +161,6 @@ appointmentsRouter.delete('/:reference', async (req: Request, res: Response, nex
 appointmentsRouter.patch('/:reference', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, date, startTime, branchId, customerName, customerPhone } = req.body;
-    console.log("🚀 ~ date:", date)
     if (!email || typeof email !== 'string' || !email.trim()) {
       return res.status(400).json({ error: 'Email is required' });
     }
@@ -158,36 +176,45 @@ appointmentsRouter.patch('/:reference', async (req: Request, res: Response, next
       return res.status(400).json({ error: 'Cannot update a cancelled booking' });
     }
 
-    const updates: { appointmentDate?: Date; startTime?: string; endTime?: string; branchId?: number; customerName?: string; customerPhone?: string } = {};
-    console.log("🚀 ~ parseDateString(String(date)):", parseDateString(String(date)))
-
-    if (date != null) updates.appointmentDate = parseDateString(String(date));
-    if (startTime != null) {
-      updates.startTime = String(startTime);
-      updates.endTime = addMinutesToTime(String(startTime), SLOT_MINUTES);
-    }
+    const updates: {
+      bookingTime?: Date;
+      durationMinutes?: number;
+      branchId?: number;
+      customerName?: string;
+      customerPhone?: string;
+    } = {};
     if (branchId != null) updates.branchId = Number(branchId);
     if (customerName != null) updates.customerName = String(customerName);
     if (customerPhone != null) updates.customerPhone = String(customerPhone);
+    if (date != null && startTime != null) {
+      updates.bookingTime = localDateAndTimeToUTC(String(date), String(startTime), BOOKING_TIMEZONE);
+      updates.durationMinutes = SLOT_MINUTES;
+    }
 
     if (Object.keys(updates).length === 0) {
       return res.json(toAppointmentDto(appointment));
     }
 
-    if (updates.branchId != null || updates.appointmentDate != null || updates.startTime != null) {
-      const branchIdToCheck = updates.branchId ?? appointment.branchId;
-      const dateToCheck = updates.appointmentDate ?? new Date(appointment.appointmentDate);
-      const startToCheck = updates.startTime ?? appointment.startTime;
-      const existing = await prisma.appointment.findFirst({
+    const finalBranchId = updates.branchId ?? appointment.branchId;
+    const finalBookingTime = updates.bookingTime ?? appointment.bookingTime;
+    const finalDuration = updates.durationMinutes ?? appointment.durationMinutes;
+
+    if (updates.bookingTime != null) {
+      // Prevent double-booking: no overlapping windows for same branch.
+      const scheduled = await prisma.appointment.findMany({
         where: {
-          branchId: branchIdToCheck,
-          appointmentDate: dateToCheck,
-          startTime: startToCheck,
+          branchId: finalBranchId,
           status: 'scheduled',
           NOT: { confirmationReference: req.params.reference },
         },
+        select: { bookingTime: true, durationMinutes: true },
       });
-      if (existing) return res.status(409).json({ error: 'Slot no longer available' });
+      const hasOverlap = scheduled.some((a) =>
+        windowsOverlap(finalBookingTime, finalDuration, a.bookingTime, a.durationMinutes)
+      );
+      if (hasOverlap) {
+        return res.status(409).json({ error: 'Slot no longer available' });
+      }
     }
 
     const updated = await prisma.appointment.update({

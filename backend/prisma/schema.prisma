@@ -22,9 +22,8 @@ model Branch {
 model Appointment {
   id                   Int      @id @default(autoincrement())
   branchId             Int      @map("branch_id")
-  appointmentDate      DateTime @map("appointment_date") @db.Date
-  startTime            String   @map("start_time")  // e.g. "10:00"
-  endTime              String   @map("end_time")
+  bookingTime          DateTime @map("booking_time")
+  durationMinutes     Int      @map("duration_minutes")
   customerName         String   @map("customer_name")
   customerPhone        String   @map("customer_phone")
   customerEmail        String   @map("customer_email")
@@ -34,6 +33,6 @@ model Appointment {
   updatedAt            DateTime @updatedAt @map("updated_at")
   branch               Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
-  @@unique([branchId, appointmentDate, startTime])
+  // Slot uniqueness enforced by partial unique index (excludes cancelled) in migration
   @@map("appointments")
 }

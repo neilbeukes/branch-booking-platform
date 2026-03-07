@@ -51,7 +51,6 @@ export function DateTimeStep({ branch, onSelect }: DateTimeStepProps) {
   };
 
   const handleDateSelect = (date: string) => {
-    console.log("🚀 ~ handleDateSelect ~ date:", date);
     setSelectedDate(date);
     setSelectedSlot(null);
   };

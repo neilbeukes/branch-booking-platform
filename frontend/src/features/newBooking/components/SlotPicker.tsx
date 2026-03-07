@@ -1,5 +1,5 @@
-import type { Slot } from '../../../types';
-import { Button } from '../../../components/Button';
+import type { Slot } from "../../../types";
+import { Button } from "../../../components/Button";
 
 export interface SlotPickerProps {
   selectedDate: string;
@@ -18,13 +18,16 @@ export function SlotPicker({
   selectedSlot,
   onSlotSelect,
   onConfirm,
-  confirmLabel = 'Next',
+  confirmLabel = "Next",
 }: SlotPickerProps) {
-  const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('en-ZA', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
+  const dateLabel = new Date(selectedDate + "T12:00:00").toLocaleDateString(
+    "en-ZA",
+    {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    },
+  );
 
   return (
     <div className="space-y-3">
@@ -34,7 +37,9 @@ export function SlotPicker({
       {isLoading ? (
         <p className="text-gray-500 text-sm">Loading slots...</p>
       ) : slots.length === 0 ? (
-        <p className="text-gray-500 text-sm">No slots available for this date.</p>
+        <p className="text-gray-500 text-sm">
+          No slots available for this date.
+        </p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {slots.map((slot) => {
@@ -42,7 +47,7 @@ export function SlotPicker({
             return (
               <Button
                 key={slot.startTime}
-                variant={active ? 'primary' : 'secondary'}
+                variant={active ? "primary" : "secondary"}
                 size="sm"
                 onClick={() => onSlotSelect(slot)}
               >

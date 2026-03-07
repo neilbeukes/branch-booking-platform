@@ -1,12 +1,10 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma.js';
-import { SLOT_MINUTES } from '../utils/consts.js';
+import { SLOT_MINUTES, BOOKING_TIMEZONE } from '../utils/consts.js';
 import {
-  formatDateToYMD,
-  startOfMonthAt,
-  endOfMonthAt,
-  daysInRangeNotBeforeToday,
-  parseDateString,
+  utcToLocalTime,
+  localDateToUTCRange,
+  todayInTimezone,
 } from '../utils/date.js';
 
 export const branchesRouter = Router();
@@ -23,7 +21,6 @@ branchesRouter.get('/', async (_req: Request, res: Response, next: NextFunction)
     next(e);
   }
 });
-
 
 function timeToMinutes(timeStr: string): number {
   const [h, m] = timeStr.split(':').map(Number);
@@ -54,6 +51,24 @@ function getSlotsForDay(
   return slots;
 }
 
+/** From appointments (bookingTime UTC + durationMinutes), return set of local slot start times (HH:mm) in the given timezone */
+function getBookedSlotStarts(
+  appointments: { bookingTime: Date; durationMinutes: number }[],
+  timezone: string
+): Set<string> {
+  const taken = new Set<string>();
+  for (const a of appointments) {
+    const startLocal = utcToLocalTime(a.bookingTime, timezone);
+    const [h, min] = startLocal.split(':').map(Number);
+    const startMinutes = (h ?? 0) * 60 + (min ?? 0);
+    const endMinutes = startMinutes + a.durationMinutes;
+    for (let m = startMinutes; m < endMinutes; m += SLOT_MINUTES) {
+      taken.add(minutesToTime(m));
+    }
+  }
+  return taken;
+}
+
 /** GET /api/branches/:id/availability/month?month=YYYY-MM — dates in that month that have at least one free slot */
 branchesRouter.get('/:id/availability/month', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -69,31 +84,25 @@ branchesRouter.get('/:id/availability/month', async (req: Request, res: Response
     const branch = await prisma.branch.findUnique({ where: { id } });
     if (!branch) return res.status(404).json({ error: 'Branch not found' });
 
-    const firstDay = startOfMonthAt(y, m);
-    const lastDay = endOfMonthAt(y, m);
-
-    const appointments = await prisma.appointment.findMany({
-      where: {
-        branchId: id,
-        status: 'scheduled',
-        appointmentDate: { gte: firstDay, lte: lastDay },
-      },
-      select: { appointmentDate: true, startTime: true },
-    });
-
-    const bookedByDate = new Map<string, string[]>();
-    for (const a of appointments) {
-      const key = formatDateToYMD(new Date(a.appointmentDate));
-      if (!bookedByDate.has(key)) bookedByDate.set(key, []);
-      bookedByDate.get(key)!.push(a.startTime);
-    }
-
-    const datesToCheck = daysInRangeNotBeforeToday(firstDay, lastDay);
+    const todayStr = todayInTimezone(BOOKING_TIMEZONE);
+    const daysInMonth = new Date(y, m, 0).getDate();
     const datesWithSlots: string[] = [];
-    for (const d of datesToCheck) {
-      const dateStr = formatDateToYMD(d);
-      const booked = bookedByDate.get(dateStr) ?? [];
-      const slots = getSlotsForDay(branch.openTime, branch.closeTime, booked);
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      if (dateStr < todayStr) continue;
+
+      const { start: rangeStart, end: rangeEnd } = localDateToUTCRange(dateStr, BOOKING_TIMEZONE);
+      const appointments = await prisma.appointment.findMany({
+        where: {
+          branchId: id,
+          status: 'scheduled',
+          bookingTime: { gte: rangeStart, lt: rangeEnd },
+        },
+        select: { bookingTime: true, durationMinutes: true },
+      });
+      const bookedStarts = getBookedSlotStarts(appointments, BOOKING_TIMEZONE);
+      const slots = getSlotsForDay(branch.openTime, branch.closeTime, [...bookedStarts]);
       if (slots.length > 0) datesWithSlots.push(dateStr);
     }
 
@@ -114,16 +123,17 @@ branchesRouter.get('/:id/availability', async (req: Request, res: Response, next
     const branch = await prisma.branch.findUnique({ where: { id } });
     if (!branch) return res.status(404).json({ error: 'Branch not found' });
 
-    const date = parseDateString(dateStr);
-    const booked = await prisma.appointment.findMany({
-      where: { branchId: id, appointmentDate: date, status: 'scheduled' },
-      select: { startTime: true },
+    const { start: rangeStart, end: rangeEnd } = localDateToUTCRange(dateStr, BOOKING_TIMEZONE);
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        branchId: id,
+        status: 'scheduled',
+        bookingTime: { gte: rangeStart, lt: rangeEnd },
+      },
+      select: { bookingTime: true, durationMinutes: true },
     });
-    const slots = getSlotsForDay(
-      branch.openTime,
-      branch.closeTime,
-      booked.map((a) => a.startTime)
-    );
+    const bookedStarts = getBookedSlotStarts(appointments, BOOKING_TIMEZONE);
+    const slots = getSlotsForDay(branch.openTime, branch.closeTime, [...bookedStarts]);
     res.json(slots);
   } catch (e) {
     next(e);

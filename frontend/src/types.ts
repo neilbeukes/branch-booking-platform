@@ -17,8 +17,9 @@ export interface ConfirmationPayload {
   branch: string;
   branchAddress: string;
   branchCode?: string;
-  date: string;
-  time: string;
+  /** UTC ISO; UI formats in local timezone */
+  bookingTime: string;
+  durationMinutes: number;
   customerName: string;
   customerEmail?: string;
   status?: string;
@@ -27,9 +28,7 @@ export interface ConfirmationPayload {
 /** Single booking as returned from list or get endpoint */
 export interface BookingListItem extends ConfirmationPayload {
   branchId?: number;
-  endTime?: string;
   customerPhone?: string;
-  customerEmail?: string;
 }
 
 export interface AppointmentCreateBody {

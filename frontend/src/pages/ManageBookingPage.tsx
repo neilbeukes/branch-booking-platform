@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
-import { appointments } from '../api/client';
-import type { BookingListItem } from '../types';
-import { BookingDetail } from '../components/BookingDetail';
-import { AddToCalendar } from '../components/AddToCalendar';
-import { Button } from '../components/Button';
-import { FaArrowLeft } from 'react-icons/fa';
+import { useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router-dom";
+import { appointments } from "../api/client";
+import type { BookingListItem } from "../types";
+import { BookingDetail } from "../components/BookingDetail";
+import { AddToCalendar } from "../components/AddToCalendar";
+import { Button } from "../components/Button";
+import { FaArrowLeft } from "react-icons/fa";
+import { useConfirmationModal } from "../contexts/ConfirmationModalContext/ConfirmationModalContext";
 
 export function ManageBookingPage() {
+  const { confirm } = useConfirmationModal();
   const [searchParams, setSearchParams] = useSearchParams();
-  const refFromUrl = searchParams.get('reference')?.trim() ?? '';
-  const emailFromUrl = searchParams.get('email')?.trim() ?? '';
+  const refFromUrl = searchParams.get("reference")?.trim() ?? "";
+  const emailFromUrl = searchParams.get("email")?.trim() ?? "";
 
   const [reference, setReference] = useState(refFromUrl);
   const [email, setEmail] = useState(emailFromUrl);
@@ -29,7 +31,7 @@ export function ManageBookingPage() {
       setBooking(data);
       setSearchParams({ reference: ref, email: em });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to load booking');
+      setError(e instanceof Error ? e.message : "Failed to load booking");
       setBooking(null);
     } finally {
       setLoading(false);
@@ -51,21 +53,29 @@ export function ManageBookingPage() {
 
   const handleCancel = async () => {
     if (!booking || !email || cancelled) return;
-    if (!window.confirm('Cancel this booking? This cannot be undone.')) return;
+    const confirmed = await confirm({
+      title: "Cancel booking",
+      message:
+        "Are you sure you want to cancel this booking? This cannot be undone.",
+      confirmLabel: "Cancel",
+      cancelLabel: "Keep",
+      variant: "danger",
+    });
+    if (!confirmed) return;
     setCancelling(true);
     setError(null);
     try {
       await appointments.cancel(booking.confirmationReference, email);
       setCancelled(true);
-      setBooking((b) => (b ? { ...b, status: 'cancelled' } : null));
+      setBooking((b) => (b ? { ...b, status: "cancelled" } : null));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to cancel');
+      setError(e instanceof Error ? e.message : "Failed to cancel");
     } finally {
       setCancelling(false);
     }
   };
 
-  const isCancelled = booking?.status === 'cancelled';
+  const isCancelled = booking?.status === "cancelled";
 
   return (
     <div className="space-y-4">
@@ -78,10 +88,21 @@ export function ManageBookingPage() {
       <h2 className="text-lg font-semibold text-gray-800">Manage my booking</h2>
 
       {!refFromUrl && !emailFromUrl ? (
-        <form onSubmit={handleSubmit} className="space-y-4 p-6 rounded-lg border border-gray-200 bg-white">
-          <p className="text-sm text-gray-600">Enter your confirmation reference and email to view or cancel your booking.</p>
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-4 p-6 rounded-lg border border-gray-200 bg-white"
+        >
+          <p className="text-sm text-gray-600">
+            Enter your confirmation reference and email to view or cancel your
+            booking.
+          </p>
           <div>
-            <label htmlFor="manage-ref" className="block text-sm font-medium text-gray-700 mb-1">Reference</label>
+            <label
+              htmlFor="manage-ref"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Reference
+            </label>
             <input
               id="manage-ref"
               type="text"
@@ -93,7 +114,12 @@ export function ManageBookingPage() {
             />
           </div>
           <div>
-            <label htmlFor="manage-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label
+              htmlFor="manage-email"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Email
+            </label>
             <input
               id="manage-email"
               type="email"
@@ -104,13 +130,23 @@ export function ManageBookingPage() {
               required
             />
           </div>
-          {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
-          <Button type="submit" variant="primary" disabled={loading}>View booking</Button>
+          {error && (
+            <p className="text-sm text-red-600" role="alert">
+              {error}
+            </p>
+          )}
+          <Button type="submit" variant="primary" disabled={loading}>
+            View booking
+          </Button>
         </form>
       ) : (
         <>
           {loading && <p className="text-gray-500">Loading…</p>}
-          {error && <p className="text-sm text-red-600" role="alert">{error}</p>}
+          {error && (
+            <p className="text-sm text-red-600" role="alert">
+              {error}
+            </p>
+          )}
           {booking && !loading && (
             <div className="p-6 rounded-lg border border-gray-200 bg-white">
               <BookingDetail
@@ -118,8 +154,8 @@ export function ManageBookingPage() {
                   confirmationReference: booking.confirmationReference,
                   branch: booking.branch,
                   branchAddress: booking.branchAddress,
-                  date: booking.date,
-                  time: booking.time,
+                  bookingTime: booking.bookingTime,
+                  durationMinutes: booking.durationMinutes,
                   customerName: booking.customerName,
                   customerEmail: booking.customerEmail,
                   status: booking.status,
@@ -131,28 +167,39 @@ export function ManageBookingPage() {
                       event={{
                         title: `Capitec appointment – ${booking.branch}`,
                         description: `Reference: ${booking.confirmationReference}. ${booking.customerName}.`,
-                        location: [booking.branch, booking.branchAddress].filter(Boolean).join(', '),
-                        start: booking.date,
-                        startTime: booking.time,
-                        durationMinutes: 60,
+                        location: [booking.branch, booking.branchAddress]
+                          .filter(Boolean)
+                          .join(", "),
+                        start: booking.bookingTime,
+                        durationMinutes: booking.durationMinutes,
                         manageBookingUrl:
-                          typeof window !== 'undefined' && email
+                          typeof window !== "undefined" && email
                             ? `${window.location.origin}/manage?reference=${encodeURIComponent(booking.confirmationReference)}&email=${encodeURIComponent(email)}`
                             : undefined,
                       }}
                       className="pt-4 border-t border-gray-100"
                     />
                     <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
-                      <Button variant="primary" onClick={handleCancel} disabled={cancelling}>
-                        {cancelling ? 'Cancelling…' : 'Cancel booking'}
+                      <Button
+                        variant="primary"
+                        onClick={handleCancel}
+                        disabled={cancelling}
+                      >
+                        {cancelling ? "Cancelling…" : "Cancel booking"}
                       </Button>
-                      <Link to={`/?edit=${encodeURIComponent(booking.confirmationReference)}&email=${encodeURIComponent(email)}`}>
+                      <Link
+                        to={`/?edit=${encodeURIComponent(booking.confirmationReference)}&email=${encodeURIComponent(email)}`}
+                      >
                         <Button variant="secondary">Edit / reschedule</Button>
                       </Link>
                     </div>
                   </>
                 )}
-                {isCancelled && <p className="pt-4 border-t border-gray-100 text-sm text-amber-700">This booking has been cancelled.</p>}
+                {isCancelled && (
+                  <p className="pt-4 border-t border-gray-100 text-sm text-amber-700">
+                    This booking has been cancelled.
+                  </p>
+                )}
               </BookingDetail>
             </div>
           )}

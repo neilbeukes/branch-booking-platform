@@ -16,9 +16,8 @@ CREATE TABLE "Branch" (
 CREATE TABLE "appointments" (
     "id" SERIAL NOT NULL,
     "branch_id" INTEGER NOT NULL,
-    "appointment_date" DATE NOT NULL,
-    "start_time" TEXT NOT NULL,
-    "end_time" TEXT NOT NULL,
+    "booking_time" TIMESTAMP(3) WITH TIME ZONE NOT NULL,
+    "duration_minutes" INTEGER NOT NULL,
     "customer_name" TEXT NOT NULL,
     "customer_phone" TEXT NOT NULL,
     "customer_email" TEXT NOT NULL,
@@ -37,7 +36,7 @@ CREATE UNIQUE INDEX "Branch_branch_code_key" ON "Branch"("branch_code");
 CREATE UNIQUE INDEX "appointments_confirmation_reference_key" ON "appointments"("confirmation_reference");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "appointments_branch_id_appointment_date_start_time_key" ON "appointments"("branch_id", "appointment_date", "start_time");
+CREATE UNIQUE INDEX "appointments_branch_id_booking_time_key" ON "appointments"("branch_id", "booking_time");
 
 -- AddForeignKey
 ALTER TABLE "appointments" ADD CONSTRAINT "appointments_branch_id_fkey" FOREIGN KEY ("branch_id") REFERENCES "Branch"("id") ON DELETE CASCADE ON UPDATE CASCADE;

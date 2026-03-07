@@ -1,10 +1,20 @@
-import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { Button } from '../../../components/Button';
+import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
+import { Button } from "../../../components/Button";
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 function getCalendarDays(year: number, month: number): (number | null)[] {
@@ -19,8 +29,8 @@ function getCalendarDays(year: number, month: number): (number | null)[] {
 
 function toDateStr(year: number, month: number, day: number): string {
   const y = String(year);
-  const m = String(month + 1).padStart(2, '0');
-  const d = String(day).padStart(2, '0');
+  const m = String(month + 1).padStart(2, "0");
+  const d = String(day).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
 
@@ -118,12 +128,12 @@ export function BookingCalendar({
                 onClick={() => handleDateClick(day)}
                 className={`
                   aspect-square min-w-0 rounded-md text-xs font-medium transition
-                  ${disabled ? 'cursor-not-allowed' : ''}
-                  ${isPastDay ? 'text-gray-300' : ''}
-                  ${noSlots ? 'text-gray-400 opacity-60 blur-[0.5px]' : ''}
-                  ${!disabled && !isSelected ? 'text-gray-700 hover:bg-gray-100' : ''}
-                  ${isSelected ? 'bg-gray-900 text-white opacity-100 blur-none' : ''}
-                  ${!disabled && isToday && !isSelected ? 'ring-1 ring-gray-400' : ''}
+                  ${disabled ? "cursor-not-allowed" : ""}
+                  ${isPastDay ? "text-gray-300" : ""}
+                  ${noSlots ? "text-gray-400 opacity-60 blur-[0.5px]" : ""}
+                  ${!disabled && !isSelected ? "text-gray-700 hover:bg-gray-100" : ""}
+                  ${isSelected ? "bg-gray-900 text-white opacity-100 blur-none" : ""}
+                  ${!disabled && isToday && !isSelected ? "ring-1 ring-gray-400" : ""}
                 `}
               >
                 {day}

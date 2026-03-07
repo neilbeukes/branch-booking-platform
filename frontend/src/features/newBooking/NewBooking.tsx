@@ -14,8 +14,7 @@ import { Stepper } from "../../components/Stepper";
 import useBooking from "./hooks/useBooking";
 import type { InitialEditState } from "./hooks/useBooking";
 import { STEPS } from "./consts";
-import { appointments } from "../../api/client";
-import { branches } from "../../api/client";
+import { appointments, branches } from "../../api/client";
 
 type StepTransitionConfig = Pick<
   MotionProps,
@@ -95,12 +94,16 @@ function BookingFlow({
   const stepContent = renderStep();
   if (!stepContent) return null;
 
+  const isConfirmStep = currentStep.id === "confirm";
+  const showBackButton = !isFirstStep && (!isConfirmStep || !!initialEdit);
+
   return (
     <Stepper
       currentStep={currentStep.id}
       steps={STEPS}
       onBack={goBack}
       isFirstStep={isFirstStep}
+      showBackButton={showBackButton}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.div

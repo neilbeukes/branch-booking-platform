@@ -1,16 +1,41 @@
-import { useQuery } from '@tanstack/react-query';
-import { appointments } from '../api/client';
-import { Link } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
+import { useQuery } from "@tanstack/react-query";
+import { appointments } from "../api/client";
+import { Link } from "react-router-dom";
+import { FaArrowLeft } from "react-icons/fa";
+import { formatBookingDisplay } from "../utils/bookingDisplay";
+
+const columns = [
+  { label: "Reference", key: "confirmationReference" },
+  { label: "Branch", key: "branch" },
+  { label: "Address", key: "branchAddress" },
+  { label: "Date", key: "date" },
+  { label: "Time", key: "time" },
+  { label: "Customer", key: "customerName" },
+  { label: "Phone", key: "customerPhone" },
+  { label: "Email", key: "customerEmail" },
+  { label: "Status", key: "status" },
+];
 
 export function BookingsPage() {
-  const { data: bookings = [], isLoading, error } = useQuery({
-    queryKey: ['appointments', 'list'],
+  const {
+    data: bookings = [],
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["appointments", "list"],
     queryFn: () => appointments.list(),
   });
 
-  if (isLoading) return <div className="py-8 text-center text-gray-500">Loading bookings…</div>;
-  if (error) return <div className="py-8 text-center text-red-600">Failed to load bookings.</div>;
+  if (isLoading)
+    return (
+      <div className="py-8 text-center text-gray-500">Loading bookings…</div>
+    );
+  if (error)
+    return (
+      <div className="py-8 text-center text-red-600">
+        Failed to load bookings.
+      </div>
+    );
 
   return (
     <div className="space-y-4">
@@ -28,31 +53,57 @@ export function BookingsPage() {
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Reference</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Branch</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Address</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Date</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Time</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Customer</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Phone</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Email</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-700">Status</th>
+                {columns.map((c) => (
+                  <th
+                    className="px-4 py-3 text-left font-medium text-gray-700"
+                    key={c.key}
+                  >
+                    {c.label}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {bookings.map((b) => (
-                <tr key={b.confirmationReference} className="border-b border-gray-100 hover:bg-gray-50/50">
-                  <td className="px-4 py-3 font-mono text-gray-900">{b.confirmationReference}</td>
-                  <td className="px-4 py-3 text-gray-900">{b.branch}</td>
-                  <td className="max-w-[200px] truncate px-4 py-3 text-gray-600" title={b.branchAddress}>{b.branchAddress}</td>
-                  <td className="px-4 py-3 text-gray-900">{b.date}</td>
-                  <td className="px-4 py-3 text-gray-900">{b.time}</td>
-                  <td className="px-4 py-3 text-gray-900">{b.customerName}</td>
-                  <td className="px-4 py-3 text-gray-900">{b.customerPhone ?? '—'}</td>
-                  <td className="max-w-[180px] truncate px-4 py-3 text-gray-900" title={b.customerEmail}>{b.customerEmail ?? '—'}</td>
-                  <td className="px-4 py-3 text-gray-900">{b.status ?? '—'}</td>
-                </tr>
-              ))}
+              {bookings.map((b) => {
+                const display = formatBookingDisplay(
+                  b.bookingTime,
+                  b.durationMinutes,
+                );
+                return (
+                  <tr
+                    key={b.confirmationReference}
+                    className="border-b border-gray-100 hover:bg-gray-50/50"
+                  >
+                    <td className="px-4 py-3 font-mono text-gray-900">
+                      {b.confirmationReference}
+                    </td>
+                    <td className="px-4 py-3 text-gray-900">{b.branch}</td>
+                    <td
+                      className="max-w-[200px] truncate px-4 py-3 text-gray-600"
+                      title={b.branchAddress}
+                    >
+                      {b.branchAddress}
+                    </td>
+                    <td className="px-4 py-3 text-gray-900">{display.date}</td>
+                    <td className="px-4 py-3 text-gray-900">{display.time}</td>
+                    <td className="px-4 py-3 text-gray-900">
+                      {b.customerName}
+                    </td>
+                    <td className="px-4 py-3 text-gray-900">
+                      {b.customerPhone ?? "—"}
+                    </td>
+                    <td
+                      className="max-w-[180px] truncate px-4 py-3 text-gray-900"
+                      title={b.customerEmail}
+                    >
+                      {b.customerEmail ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-gray-900">
+                      {b.status ?? "—"}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
