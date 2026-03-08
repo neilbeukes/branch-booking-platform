@@ -8,8 +8,9 @@ RUN npm install
 COPY frontend/ ./
 RUN npm run build
 
-# backend (use slim image so Prisma engines work without extra packages)
+# backend (slim + OpenSSL required for Prisma schema engine)
 FROM node:20-slim AS app
+RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY backend/package.json ./
 RUN npm install
