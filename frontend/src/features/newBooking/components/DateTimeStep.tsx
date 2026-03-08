@@ -61,7 +61,7 @@ export function DateTimeStep({ branch, onSelect }: DateTimeStepProps) {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-gray-500">{branch.name}</p>
+      <p className="text-md text-gray-500">Selected Branch: {branch.name}</p>
 
       <BookingCalendar
         viewYear={viewYear}

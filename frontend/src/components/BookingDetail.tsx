@@ -20,6 +20,12 @@ interface BookingDetailProps {
 /** Reusable booking summary (reference, branch, date/time, customer). Used in confirmation and manage pages. */
 export function BookingDetail({ data, children }: BookingDetailProps) {
   const display = formatBookingDisplay(data.bookingTime, data.durationMinutes);
+  const mapsQuery = [data.branch, data.branchAddress]
+    .filter(Boolean)
+    .join(", ");
+  const mapsUrl =
+    mapsQuery &&
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
 
   return (
     <div className="space-y-4">
@@ -32,9 +38,22 @@ export function BookingDetail({ data, children }: BookingDetailProps) {
         </div>
         <div>
           <dt className="text-gray-500">Branch</dt>
-          <dd className="text-gray-900">{data.branch}</dd>
+          <dd className="text-gray-900">data.branch</dd>
           {data.branchAddress && (
-            <dd className="text-gray-500">{data.branchAddress}</dd>
+            <dd className="text-gray-500">
+              {mapsUrl ? (
+                <a
+                  href={mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+                >
+                  {data.branchAddress}
+                </a>
+              ) : (
+                data.branchAddress
+              )}
+            </dd>
           )}
         </div>
         <div>
