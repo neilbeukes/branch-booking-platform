@@ -1,3 +1,6 @@
+<img width="1694" height="596" alt="image" src="https://github.com/user-attachments/assets/48e2426b-9d1f-4bcd-a932-82549892927c" />
+
+
 # Capitec Branch Booking System
 
 A simple appointment booking system: customers choose a branch, date and time, enter their details, and receive a simulated confirmation and can add it to calendar. Booking will be stored in the DB.
