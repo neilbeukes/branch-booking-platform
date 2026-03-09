@@ -9,7 +9,6 @@ interface StepperProps {
   steps: { id: StepId; label: string; heading: string }[];
   children?: ReactNode;
   onBack: () => void;
-  /** When false, back button is hidden (e.g. on confirmation step for new bookings) */
   showBackButton?: boolean;
 }
 

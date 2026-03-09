@@ -1,24 +1,13 @@
 import { useState } from "react";
 import { Branch, Slot, ConfirmationPayload } from "../../../types";
-import type { BookingListItem } from "../../../types";
 import { STEPS } from "../consts";
 import { toast } from "react-hot-toast";
+import { dateAndSlotFromBooking } from "../../../utils/bookingDisplay";
+import { BookingListItem } from "../../../types";
 
 export interface InitialEditState {
   booking: BookingListItem;
   branch: Branch;
-}
-
-function dateAndSlotFromBooking(
-  booking: BookingListItem,
-): { date: string; slot: Slot } | null {
-  if (!booking.bookingTime || booking.durationMinutes == null) return null;
-  const start = new Date(booking.bookingTime);
-  const end = new Date(start.getTime() + booking.durationMinutes * 60 * 1000);
-  const date = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
-  const startTime = `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`;
-  const endTime = `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`;
-  return { date, slot: { startTime, endTime } };
 }
 
 const useBooking = (initialEdit: InitialEditState | null = null) => {

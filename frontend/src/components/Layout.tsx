@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 
 interface LayoutProps {
   children: ReactNode;
-  /** Use wider max-width (e.g. for bookings table) */
   wide?: boolean;
 }
 
@@ -50,9 +49,19 @@ export function Layout({ children, wide = false }: LayoutProps) {
               aria-hidden
             >
               {menuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
               )}
             </svg>
           </button>
@@ -60,10 +69,18 @@ export function Layout({ children, wide = false }: LayoutProps) {
         {/* Mobile nav (collapsible) */}
         {menuOpen && (
           <nav className="md:hidden mt-3 pt-3 border-t border-gray-200 flex flex-col gap-2">
-            <Link to="/manage" className={`${navLinkClass} block w-full text-center`} onClick={() => setMenuOpen(false)}>
+            <Link
+              to="/manage"
+              className={`${navLinkClass} block w-full text-center`}
+              onClick={() => setMenuOpen(false)}
+            >
               Manage my booking
             </Link>
-            <Link to="/bookings" className={`${navLinkClass} block w-full text-center`} onClick={() => setMenuOpen(false)}>
+            <Link
+              to="/bookings"
+              className={`${navLinkClass} block w-full text-center`}
+              onClick={() => setMenuOpen(false)}
+            >
               Bookings
             </Link>
           </nav>

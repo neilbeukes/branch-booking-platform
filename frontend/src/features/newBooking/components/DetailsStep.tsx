@@ -21,7 +21,6 @@ interface DetailsStepProps {
   date: string;
   slot: Slot;
   onSubmit: (data: ConfirmationPayload) => void;
-  /** When set, form submits via PATCH and uses these as default values */
   editReference?: string;
   editEmail?: string;
   defaultValues?: Record<string, string>;

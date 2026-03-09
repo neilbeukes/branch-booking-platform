@@ -68,6 +68,22 @@ npm run dev
 
 Frontend runs at [http://localhost:5173](http://localhost:5173) and proxies `/api` to the backend.
 
+## Running tests
+
+Backend unit tests (Vitest):
+
+```bash
+cd backend
+npm test
+```
+
+Watch mode (re-run on file changes):
+
+```bash
+cd backend
+npm run test:watch
+```
+
 ## Build for production
 
 ```bash

@@ -40,10 +40,24 @@ export interface AppointmentCreateBody {
   customerEmail: string;
 }
 
+export interface MonthAvailability {
+  datesWithSlots: string[];
+}
+
+export interface AppointmentUpdateBody {
+  email: string;
+  date?: string;
+  startTime?: string;
+  branchId?: number;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+}
+
 export interface User {
   id: number;
   name: string;
   email: string;
   phone: string;
-  role: 'admin' | 'user';
+  role: "admin" | "user";
 }
