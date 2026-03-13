@@ -5,6 +5,7 @@ import App from "./App";
 import "./index.css";
 import { Toaster } from "react-hot-toast";
 import { ConfirmationModalProvider } from "./contexts/ConfirmationModalContext/ConfirmationModalContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -14,11 +15,13 @@ const queryClient = new QueryClient({
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ConfirmationModalProvider>
-        <App />
-        <Toaster />
-      </ConfirmationModalProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ConfirmationModalProvider>
+          <App />
+          <Toaster />
+        </ConfirmationModalProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </React.StrictMode>,
 );

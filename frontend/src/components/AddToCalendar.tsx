@@ -3,21 +3,13 @@ import { FaCalendarPlus } from "react-icons/fa";
 import { Button } from "./Button";
 
 export interface AddToCalendarEvent {
-  /** Event title */
   title: string;
-  /** Optional description */
   description?: string;
-  /** Location (e.g. branch address) */
   location?: string;
-  /** Start – full ISO string, or "YYYY-MM-DD" when startTime is provided */
   start: string;
-  /** Start time "HH:mm" when start is date-only (e.g. "09:00" or "09:00 – 10:00" – first part used) */
   startTime?: string;
-  /** End date/time – ISO string; if omitted, durationMinutes is used */
   end?: string;
-  /** If end is not provided, duration in minutes from start (default 60) */
   durationMinutes?: number;
-  /** URL to manage this booking (app /manage?reference=...&email=...); added to description and ICS URL */
   manageBookingUrl?: string;
 }
 

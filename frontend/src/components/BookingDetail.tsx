@@ -17,7 +17,6 @@ interface BookingDetailProps {
   children?: ReactNode;
 }
 
-/** Reusable booking summary (reference, branch, date/time, customer). Used in confirmation and manage pages. */
 export function BookingDetail({ data, children }: BookingDetailProps) {
   const display = formatBookingDisplay(data.bookingTime, data.durationMinutes);
   const mapsQuery = [data.branch, data.branchAddress]

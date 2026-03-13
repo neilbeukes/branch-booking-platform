@@ -25,7 +25,6 @@ export interface ConfirmationPayload {
   status?: string;
 }
 
-/** Single booking as returned from list or get endpoint */
 export interface BookingListItem extends ConfirmationPayload {
   branchId?: number;
   customerPhone?: string;
